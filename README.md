@@ -53,25 +53,25 @@ Browser / API client / MCP client
 
 ```mermaid
 flowchart LR
-  Browser[React Dashboard] --> Nginx[nginx reverse proxy]
-  Nginx --> API[Spring Boot API :8080]
-  Client[API Client] --> API
-  McpClient[MCP Client] --> MCP[Spring AI MCP /mcp]
-  API --> Auth[JWT/API Key + Rate Limit + Correlation ID]
+  Browser["React Dashboard"] --> Nginx["nginx reverse proxy"]
+  Nginx --> API["Spring Boot API :8080"]
+  Client["API Client"] --> API
+  McpClient["MCP Client"] --> MCP["Spring AI MCP /mcp"]
+  API --> Auth["JWT/API Key + Rate Limit + Correlation ID"]
   MCP --> Auth
-  Auth --> RiskAPI[Risk Decision API]
-  Auth --> ToolAPI[Compatibility Tool API]
-  Auth --> SpringMCP[@McpTool Methods]
-  RiskAPI --> Service[RiskDecisionService]
+  Auth --> RiskAPI["Risk Decision API"]
+  Auth --> ToolAPI["Compatibility Tool API"]
+  Auth --> SpringMCP["@McpTool Methods"]
+  RiskAPI --> Service["RiskDecisionService"]
   ToolAPI --> Service
   SpringMCP --> Service
-  Service --> Engine[Rules Engine]
+  Service --> Engine["Rules Engine"]
   Service --> DB[(PostgreSQL)]
   Service --> Audit[(Audit Events)]
   Service --> Kafka[(Optional Kafka)]
-  Service --> Metrics[Micrometer Business Metrics]
-  Prom[Prometheus] --> Mgmt[Management Port :8081]
-  Grafana[Optional Grafana :3001] --> Prom
+  Service --> Metrics["Micrometer Business Metrics"]
+  Prom["Prometheus"] --> Mgmt["Management Port :8081"]
+  Grafana["Optional Grafana :3001"] --> Prom
   Mgmt --> Metrics
 ```
 
@@ -158,9 +158,9 @@ histogram_quantile(0.95, sum by (le, decision) (rate(risk_decision_duration_seco
 
 ```promql
 sum by (tool, status) (mcp_tool_calls_total)
-
-> MCP tool counters are registered in Java as `mcp_tool_calls`; Prometheus exports them as `mcp_tool_calls_total`. This avoids the confusing double suffix `*_total_total`.
 ```
+
+MCP tool counters are registered in Java as `mcp_tool_calls`; Prometheus exports them as `mcp_tool_calls_total`. This avoids the confusing double suffix `*_total_total`.
 
 ```promql
 sum by (path, result) (gateway_rate_limit_requests_total)

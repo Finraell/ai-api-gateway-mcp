@@ -61,7 +61,7 @@ jobs:
       - name: Build frontend image
         run: docker build -t ai-api-gateway-mcp-frontend:ci ./frontend
       - name: Scan backend image with Trivy
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: ai-api-gateway-mcp-backend:ci
           format: table
@@ -70,7 +70,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
       - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: ai-api-gateway-mcp-frontend:ci
           format: table
@@ -79,7 +79,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
       - name: Filesystem dependency/security scan
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: fs
           scan-ref: .
