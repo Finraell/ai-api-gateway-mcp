@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/ai_gateway}
+    username: ${SPRING_DATASOURCE_USERNAME:ai_gateway}
+    password: ${SPRING_DATASOURCE_PASSWORD:change-me-in-env}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+  ai:
+    mcp:
+      server:
+        enabled: ${SPRING_AI_MCP_ENABLED:true}
+
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+gateway:
+  security:
+    api-key: ${GATEWAY_API_KEY}
+    api-key-enabled: ${GATEWAY_API_KEY_ENABLED:true}
+    jwt:
+      enabled: ${GATEWAY_JWT_ENABLED:false}
+      hmac-secret: ${GATEWAY_JWT_HMAC_SECRET:local-jwt-demo-secret-change-me}
+  rate-limit:
+    enabled: ${GATEWAY_RATE_LIMIT_ENABLED:true}
+    requests-per-minute: ${GATEWAY_RATE_LIMIT_PER_MINUTE:120}
+  events:
+    enabled: ${RISK_EVENTS_ENABLED:false}

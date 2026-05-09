@@ -1,0 +1,18 @@
+gateway:
+  security:
+    api-key: test-key
+  events:
+    enabled: false
+  risk:
+    model-version: test-rules
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+  flyway:
+    enabled: false

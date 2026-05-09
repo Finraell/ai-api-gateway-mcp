@@ -1,0 +1,15 @@
+target/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Frontend artifacts
+node_modules/
+dist/
+coverage/

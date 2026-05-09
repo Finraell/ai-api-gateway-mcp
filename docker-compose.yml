@@ -1,0 +1,123 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-api-gateway-mcp-backend:local
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ai_gateway}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-ai_gateway}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:?GATEWAY_API_KEY must be set in .env}
+      GATEWAY_API_KEY_ENABLED: ${GATEWAY_API_KEY_ENABLED:-true}
+      GATEWAY_JWT_ENABLED: ${GATEWAY_JWT_ENABLED:-false}
+      GATEWAY_JWT_HMAC_SECRET: ${GATEWAY_JWT_HMAC_SECRET:-local-jwt-demo-secret-change-me}
+      GATEWAY_RATE_LIMIT_ENABLED: ${GATEWAY_RATE_LIMIT_ENABLED:-true}
+      GATEWAY_RATE_LIMIT_PER_MINUTE: ${GATEWAY_RATE_LIMIT_PER_MINUTE:-120}
+      RISK_EVENTS_ENABLED: ${RISK_EVENTS_ENABLED:-false}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      SPRING_AI_MCP_ENABLED: ${SPRING_AI_MCP_ENABLED:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+      # Management/actuator port is bound to localhost only. Prometheus scrapes it from the private Compose network.
+      - "127.0.0.1:8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: ai-api-gateway-mcp-frontend:local
+    environment:
+      # Used only by nginx inside the container; not exposed in the browser bundle.
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:?GATEWAY_API_KEY must be set in .env}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:8080"
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ai_gateway}
+      POSTGRES_USER: ${POSTGRES_USER:-ai_gateway}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ai_gateway} -d ${POSTGRES_DB:-ai_gateway}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  prometheus:
+    image: prom/prometheus:v3.8.0
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./ops/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+
+
+
+  grafana:
+    image: grafana/grafana:12.4.0
+    profiles: ["dashboards"]
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-this-local-grafana-password}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/ai-api-gateway-overview.json
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./ops/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./ops/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_started
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.8.0
+    profiles: ["events"]
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.8.0
+    profiles: ["events"]
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+volumes:
+  postgres_data:
+  grafana_data:

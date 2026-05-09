@@ -1,0 +1,52 @@
+server {
+    listen 8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri /index.html;
+    }
+
+    # Browser calls same-origin /api. Nginx injects the secret API key server-side.
+    location /api/ {
+        proxy_pass http://backend:8080/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-API-Key ${GATEWAY_API_KEY};
+        proxy_set_header Idempotency-Key $http_idempotency_key;
+    }
+
+    # Spring AI MCP stateless endpoint. Protected by the same API key.
+    location /mcp {
+        proxy_pass http://backend:8080/mcp;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-API-Key ${GATEWAY_API_KEY};
+        proxy_buffering off;
+        proxy_cache off;
+    }
+
+    location /actuator/ {
+        proxy_pass http://backend:8081/actuator/;
+    }
+
+    location /swagger-ui/ {
+        proxy_pass http://backend:8080/swagger-ui/;
+    }
+
+    location = /swagger-ui.html {
+        proxy_pass http://backend:8080/swagger-ui.html;
+    }
+
+    location /v3/api-docs/ {
+        proxy_pass http://backend:8080/v3/api-docs/;
+    }
+}
