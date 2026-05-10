@@ -61,7 +61,7 @@ flowchart LR
   MCP --> Auth
   Auth --> RiskAPI["Risk Decision API"]
   Auth --> ToolAPI["Compatibility Tool API"]
-  Auth --> SpringMCP["@McpTool Methods"]
+  Auth --> SpringMCP["McpTool Methods"]
   RiskAPI --> Service["RiskDecisionService"]
   ToolAPI --> Service
   SpringMCP --> Service
@@ -202,7 +202,51 @@ Datasource: Prometheus -> http://prometheus:9090
 Dashboard:  AI API Gateway MCP - Overview
 ```
 
-Recommended screenshot for GitHub: generate a few frontend risk decisions, open Grafana, and capture the dashboard showing decision counts, risk signals, HTTP traffic, MCP tool calls, and rate-limit metrics.
+## Screenshots
+
+### Risk decision dashboard
+
+The React dashboard can submit transactions to the secured backend API and display explainable risk decisions.
+
+| Decline decision | Approve decision |
+|---|---|
+| ![Frontend decline decision](docs/screenshots/01-frontend-decline.png) | ![Frontend approve decision](docs/screenshots/02-frontend-approve.png) |
+
+### Backend audit logging
+
+Structured backend logs show decision creation, correlation IDs, risk score, signal count, and event-publishing behavior.
+
+![Backend risk decision logs](docs/screenshots/03-backend-logs-risk-decision.png)
+
+### Observability
+
+Prometheus scrapes the backend on the separate management port, and custom Micrometer metrics expose rate-limiting and risk-decision behavior.
+
+| Prometheus targets | Rate-limit metrics |
+|---|---|
+| ![Prometheus targets up](docs/screenshots/04-prometheus-targets-up.png) | ![Prometheus rate limit query](docs/screenshots/05-prometheus-rate-limit-query.png) |
+
+### Grafana dashboard
+
+Grafana is provisioned with Prometheus as a datasource and visualizes backend health, risk decisions, HTTP traffic, rate limiting, JVM metrics, and MCP tool calls.
+
+![Grafana dashboard overview](docs/screenshots/06-grafana-dashboard_a.png)
+
+![Grafana dashboard details](docs/screenshots/06-grafana-dashboard_b.png)
+
+### API documentation and runtime
+
+Swagger documents the REST API, and Docker Compose runs the full local platform.
+
+| Swagger UI | Docker Compose stack |
+|---|---|
+| ![Swagger UI](docs/screenshots/07-swagger-ui.png) | ![Docker Compose running](docs/screenshots/08-docker-compose-running.png) |
+
+### CI
+
+GitHub Actions validates backend tests, frontend build, Docker image builds, and security scans.
+
+![GitHub Actions passing](docs/screenshots/09-github-actions-passing.png)
 
 ## Score a transaction
 
@@ -362,26 +406,9 @@ This repo is production-style, but a real financial production deployment should
 - load testing and SLO dashboards
 - formal threat modeling and compliance review
 
-## Screenshots to add before sharing publicly
+## Frontend Docker build reliability
 
-Place screenshots in `docs/screenshots/` and reference them from this README once captured. Recommended screenshots:
-
-```txt
-01-frontend-decline.png
-02-frontend-approve.png
-03-prometheus-targets-up.png
-04-prometheus-rate-limit-query.png
-05-grafana-dashboard.png
-06-swagger-ui.png
-07-docker-compose-running.png
-08-github-actions-passing.png
-```
-
-The strongest README screenshots are the frontend decision result, Prometheus target health, Grafana dashboard, Swagger UI, and a passing GitHub Actions run.
-
-## Docker frontend install note
-
-The frontend Dockerfile pins npm to `10.8.2`, installs build tooling as build-stage dependencies, and explicitly verifies that `node_modules/.bin/tsc` and `node_modules/.bin/vite` exist before running `npm run build`. This prevents npm's intermittent `Exit handler never called` issue from producing a half-installed image.
+The frontend Dockerfile pins npm to `10.8.2`, installs build tooling during the build stage, and verifies that `tsc` and `vite` are available before running the production build. This keeps the Docker build deterministic and avoids partially installed frontend dependencies.
 
 ## Maintenance notes
 
@@ -407,7 +434,6 @@ For a real production deployment:
 - move rate limiting to Redis, API Gateway, Envoy/Nginx, WAF, or service mesh for multi-instance deployments
 - send logs and audit events to durable centralized infrastructure with retention policies
 
-
-### MCP metrics note
+## MCP metrics note
 
 MCP tool-call metrics are recorded directly inside the `@McpTool` implementations so stateless Spring AI MCP invocations are visible in Prometheus/Grafana even when the MCP annotation scanner invokes tool methods outside normal Spring AOP proxy flow.
