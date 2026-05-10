@@ -10,7 +10,7 @@
 
 Production-style **Java/Spring Boot API gateway** for explainable financial risk decisions with a real **Spring AI MCP server** exposing deterministic backend capabilities as MCP tools.
 
-This is intentionally a recruiter-facing flagship repo. It demonstrates backend engineering, API platform design, Spring AI MCP, security guardrails, Dockerized deployment, business observability, audit persistence, database migrations, CI checks, and a React dashboard.
+This flagship portfolio project demonstrates how a modern Java/Spring Boot backend can expose secure, explainable, AI-ready business capabilities through REST APIs and Spring AI MCP tools, with PostgreSQL/Flyway persistence, audit events, Micrometer/Prometheus/Grafana observability, Dockerized deployment, CI checks, and a React dashboard.
 
 > This is **production-style**, not a claim that it is ready to process real financial transactions without enterprise controls, compliance review, secrets management, and external identity infrastructure.
 
